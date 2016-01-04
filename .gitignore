@@ -1,0 +1,14 @@
+# build output
+out/*
+
+# git
+.git/*
+
+# Eclipse
+.settings/*
+.classpath
+.project
+
+# jvm
+hs_err_pid*
+
