@@ -4,6 +4,10 @@ binson-java-light
 A light-weight one-file Java implementation of a Binson parser and writer.
 Binson is like JSON, but faster, binary and even simpler. See [binson.org](http://binson.org/).
 
+This library is low-level and light-weight; if a more complete feature set
+is needed, consider using 
+[github.com/franslundberg/binson-java](https://github.com/franslundberg/binson-java) instead.
+
 
 Install
 =======
