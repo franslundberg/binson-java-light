@@ -1,10 +1,9 @@
 package binson;
 
 import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
-
 import binson.BinsonLight;
+import binson.BinsonLight.ValueType;
 
 /**
  * Tests parsing arrays.
@@ -25,13 +24,13 @@ public class ParseArrayTest {
 		
 		boolean gotValue = p.nextArrayValue();
 		assertEquals(true, gotValue);
-		assertEquals(BinsonLight.TYPE_INTEGER, p.type);
-		assertEquals(1, p.integerValue);
+		assertEquals(ValueType.INTEGER, p.getType());
+		assertEquals(1, p.getInteger());
 		
 		gotValue = p.nextArrayValue();
 		assertEquals(true, gotValue);
-		assertEquals(BinsonLight.TYPE_STRING, p.type);
-		assertEquals("hello", p.stringValue.toString());
+		assertEquals(ValueType.STRING, p.getType());
+		assertEquals("hello", p.getString().toString());
 	}
 	
 	@Test
@@ -43,9 +42,9 @@ public class ParseArrayTest {
 		BinsonLight.Parser p = new BinsonLight.Parser(Hex.toBytes("40140161100114016242100a101443140163100341"));
 		
 		p.field("a");
-		assertEquals(1, p.integerValue);
+		assertEquals(1, p.getInteger());
 		p.field("c");
-		assertEquals(3, p.integerValue);
+		assertEquals(3, p.getInteger());
 	}
 	
 	@Test
@@ -59,13 +58,13 @@ public class ParseArrayTest {
 		p.field("b");
 		p.goIntoArray();
 		p.nextArrayValue();
-		assertEquals(10, p.integerValue);
+		assertEquals(10, p.getInteger());
 		p.nextArrayValue();
-		assertEquals(20, p.integerValue);
+		assertEquals(20, p.getInteger());
 		p.goUpToObject();
 		
 		p.field("c");
-		assertEquals(3, p.integerValue);
+		assertEquals(3, p.getInteger());
 	}
 	
 	@Test
@@ -77,11 +76,11 @@ public class ParseArrayTest {
 		p.field("b");
 		p.goIntoArray();
 		p.nextArrayValue();
-		assertEquals(10, p.integerValue);
+		assertEquals(10, p.getInteger());
 		p.goUpToObject();
 		
 		p.field("c");
-		assertEquals(3, p.integerValue);
+		assertEquals(3, p.getInteger());
 	}
 	
 	@Test
@@ -98,27 +97,27 @@ public class ParseArrayTest {
 		
 		gotValue = p.nextArrayValue();
 		assertEquals(true, gotValue);
-		assertEquals(10, p.integerValue);
+		assertEquals(10, p.getInteger());
 		
 		gotValue = p.nextArrayValue();
 		assertEquals(true, gotValue);
-		assertEquals(BinsonLight.TYPE_ARRAY, p.type);
+		assertEquals(ValueType.ARRAY, p.getType());
 		
 		p.goIntoArray();
 		gotValue = p.nextArrayValue();
 		assertEquals(true, gotValue);
-		assertEquals(BinsonLight.TYPE_INTEGER, p.type);
-		assertEquals(100, p.integerValue);
+		assertEquals(ValueType.INTEGER, p.getType());
+		assertEquals(100, p.getInteger());
 		
 		gotValue = p.nextArrayValue();
 		assertEquals(true, gotValue);
-		assertEquals(BinsonLight.TYPE_INTEGER, p.type);
-		assertEquals(101, p.integerValue);
+		assertEquals(ValueType.INTEGER, p.getType());
+		assertEquals(101, p.getInteger());
 		
 		p.goUpToArray();
 		
 		gotValue = p.nextArrayValue();
 		assertEquals(true, gotValue);
-		assertEquals(20, p.integerValue);		
+		assertEquals(20, p.getInteger());		
 	}
 }

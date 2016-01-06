@@ -1,13 +1,11 @@
 package binson;
 
 import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
-
 import binson.BinsonLight;
+import binson.BinsonLight.ValueType;
 
 public class ParserTest {
-	
     @Test
     public void testEmpty() {
         byte[] buffer = Hex.toBytes("4041");
@@ -27,9 +25,9 @@ public class ParserTest {
         BinsonLight.Parser p = new BinsonLight.Parser(buffer);
         boolean gotField = p.nextField();
         assertEquals(true, gotField);
-        assertEquals(BinsonLight.TYPE_INTEGER, p.type);
-        assertEquals(true, p.name.equals(new BinsonLight.StringValue("cid")));
-        assertEquals(38, p.integerValue);
+        assertEquals(BinsonLight.ValueType.INTEGER, p.getType());
+        assertEquals(true, p.getName().equals(new BinsonLight.StringValue("cid")));
+        assertEquals(38, p.getInteger());
     }
     
     @Test
@@ -42,13 +40,13 @@ public class ParserTest {
         BinsonLight.Parser p = new BinsonLight.Parser(buffer);
         boolean gotField = p.nextField();
         assertEquals(true, gotField);
-        assertEquals(BinsonLight.TYPE_INTEGER, p.type);
-        assertEquals(true, p.name.equals(new BinsonLight.StringValue("cid")));
+        assertEquals(ValueType.INTEGER, p.getType());
+        assertEquals(true, p.getName().equals(new BinsonLight.StringValue("cid")));
         
         gotField = p.nextField();
         assertEquals(true, gotField);
-        assertEquals(BinsonLight.TYPE_OBJECT, p.type);
-        assertEquals(true, p.name.equals(new BinsonLight.StringValue("z")));
+        assertEquals(ValueType.OBJECT, p.getType());
+        assertEquals(true, p.getName().equals(new BinsonLight.StringValue("z")));
     }
     
     @Test
@@ -59,9 +57,9 @@ public class ParserTest {
     	BinsonLight.Parser p = new BinsonLight.Parser(Hex.toBytes("401403636964100441"));
         boolean gotField = p.nextField();
         assertEquals(true, gotField);
-        assertEquals(BinsonLight.TYPE_INTEGER, p.type);
+        assertEquals(ValueType.INTEGER, p.getType());
         assertEquals(true, p.nameEquals("cid"));
-        assertEquals(4, p.integerValue);
+        assertEquals(4, p.getInteger());
         
         gotField = p.nextField();
         assertEquals(false, gotField);
@@ -77,15 +75,17 @@ public class ParserTest {
         boolean gotField = p.nextField();
         assertEquals(true, gotField);
         assertEquals(true, p.nameEquals("a"));
-        assertEquals(BinsonLight.TYPE_OBJECT, p.type);
+        assertEquals(ValueType.OBJECT, p.getType());
         
-        BinsonLight.Parser pi = p.parser();
-        gotField = pi.nextField();
+        p.goIntoObject();
+        gotField = p.nextField();
         assertEquals(true, gotField);
-        assertEquals(true, pi.nameEquals("b"));
-        assertEquals(BinsonLight.TYPE_INTEGER, pi.type);
-        assertEquals(2, pi.integerValue);
-        gotField = pi.nextField();
+        assertEquals(true, p.nameEquals("b"));
+        assertEquals(ValueType.INTEGER, p.getType());
+        assertEquals(2, p.getInteger());
+        p.goUpToObject();
+        
+        gotField = p.nextField();
         assertEquals(false, gotField);
     }
     
@@ -102,19 +102,19 @@ public class ParserTest {
     	gotField = p.nextField();
     	assertEquals(true, gotField);
     	assertEquals(true, p.nameEquals("a"));
-        assertEquals(BinsonLight.TYPE_INTEGER, p.type);
-        assertEquals(1, p.integerValue);
+        assertEquals(ValueType.INTEGER, p.getType());
+        assertEquals(1, p.getInteger());
         
         gotField = p.nextField();
     	assertEquals(true, gotField);
     	assertEquals(true, p.nameEquals("b"));
-        assertEquals(BinsonLight.TYPE_OBJECT, p.type);
+        assertEquals(ValueType.OBJECT, p.getType());
         
         gotField = p.nextField();
     	assertEquals(true, gotField);
     	assertEquals(true, p.nameEquals("d"));
-        assertEquals(BinsonLight.TYPE_INTEGER, p.type);
-        assertEquals(4, p.integerValue);        
+        assertEquals(ValueType.INTEGER, p.getType());
+        assertEquals(4, p.getInteger());        
     }
     
     @Test
@@ -132,12 +132,12 @@ public class ParserTest {
     	p.goIntoObject();
         p.nextField();
     	assertEquals(true, p.nameEquals("c"));
-        assertEquals(3, p.integerValue);
+        assertEquals(3, p.getInteger());
         p.goUpToObject();
         
     	assertEquals(true, p.nextField());
     	assertEquals(true, p.nameEquals("d"));
-        assertEquals(4, p.integerValue);
+        assertEquals(4, p.getInteger());
         
         assertEquals(false, p.nextField());
     }
@@ -154,11 +154,11 @@ public class ParserTest {
     	p.field("b");
     	p.goIntoObject();
     	p.field("c");
-    	assertEquals(3, p.integerValue);
+    	assertEquals(3, p.getInteger());
     	p.goUpToObject();
         
     	p.field("d");
-    	assertEquals(4, p.integerValue);
+    	assertEquals(4, p.getInteger());
     }
     
     @Test

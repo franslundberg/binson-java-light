@@ -15,8 +15,8 @@ public class ReadmeExamples {
     
     void go() throws IOException {
         //ex1();
-        ex2();
-        //ex3();
+        //ex2();
+        ex3();
     }
     
     void ex1() throws IOException {
@@ -38,9 +38,9 @@ public class ReadmeExamples {
         BinsonLight.Parser p = new BinsonLight.Parser(bytes);
         
         p.field("a");
-        System.out.println(p.integerValue);    // -> 123
+        System.out.println(p.getInteger());    // -> 123
         p.field("s");
-        System.out.println(p.stringValue);     // -> Hello world!
+        System.out.println(p.getString());     // -> Hello world!
     }
     
     void ex2() throws IOException {
@@ -67,10 +67,10 @@ public class ReadmeExamples {
         p.field("a");
         p.goIntoObject();
         p.field("b");
-        System.out.println(p.integerValue);    // -> 2
+        System.out.println(p.getInteger());    // -> 2
         p.goUpToObject();
         p.field("c");
-        System.out.println(p.integerValue);    // -> 3
+        System.out.println(p.getInteger());    // -> 3
     }
     
     void ex3() throws IOException {
@@ -94,12 +94,12 @@ public class ReadmeExamples {
         
         boolean gotValue = p.nextArrayValue();
         System.out.println(gotValue);        // -> true
-        System.out.println(p.type == BinsonLight.TYPE_INTEGER);   // -> true
-        System.out.println(p.integerValue);    // -> 123
+        System.out.println(p.getType() == BinsonLight.ValueType.INTEGER);   // -> true
+        System.out.println(p.getInteger());    // -> 123
         
         gotValue = p.nextArrayValue();
         System.out.println(gotValue);        // -> true
-        System.out.println(p.type == BinsonLight.TYPE_STRING);   // -> true
-        System.out.println(p.stringValue);     // -> Hello world!
+        System.out.println(p.getType() == BinsonLight.ValueType.STRING);   // -> true
+        System.out.println(p.getString());     // -> Hello world!
     }
 }

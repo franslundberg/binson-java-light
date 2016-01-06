@@ -19,19 +19,19 @@ public class IntegerTest {
 		BinsonLight.Parser p = new BinsonLight.Parser(Hex.toBytes("40140161100114016210ff14016311fa0014016412ffffff7f14016613ffffffffffffff7f41"));
 		
 		p.field("a");
-		assertEquals(1, p.integerValue);
+		assertEquals(1, p.getInteger());
 		
 		p.field("b");
-		assertEquals(-1, p.integerValue);
+		assertEquals(-1, p.getInteger());
 
 		p.field("c");
-		assertEquals(250, p.integerValue);
+		assertEquals(250, p.getInteger());
 
 		p.field("d");
-		assertEquals(Integer.MAX_VALUE, p.integerValue);
+		assertEquals(Integer.MAX_VALUE, p.getInteger());
 
 		p.field("f");
-		assertEquals(Long.MAX_VALUE, p.integerValue);
+		assertEquals(Long.MAX_VALUE, p.getInteger());
 	}
 	
 	@Test
@@ -42,7 +42,7 @@ public class IntegerTest {
 		
 		BinsonLight.Parser p = new BinsonLight.Parser(Hex.toBytes("4014046161616111fa0041"));
 		p.nextField();
-		assertEquals(250, p.integerValue);
+		assertEquals(250, p.getInteger());
 	}
 	
 	@Test
@@ -60,13 +60,13 @@ public class IntegerTest {
 	    BinsonLight.Parser p = new BinsonLight.Parser(out.toByteArray());
 	    
 	    p.field("i1");
-	    assertEquals(12, p.integerValue);
+	    assertEquals(12, p.getInteger());
 	    p.field("i2");
-        assertEquals(-1, p.integerValue);
+        assertEquals(-1, p.getInteger());
         p.field("i3");
-        assertEquals(127, p.integerValue);
+        assertEquals(127, p.getInteger());
         p.field("i4");
-        assertEquals(-128, p.integerValue);
+        assertEquals(-128, p.getInteger());
 	}
 	
     @Test
@@ -84,13 +84,13 @@ public class IntegerTest {
         BinsonLight.Parser p = new BinsonLight.Parser(out.toByteArray());
         
         p.field("i1");
-        assertEquals(12345, p.integerValue);
+        assertEquals(12345, p.getInteger());
         p.field("i2");
-        assertEquals(-2000, p.integerValue);
+        assertEquals(-2000, p.getInteger());
         p.field("i3");
-        assertEquals(32767, p.integerValue);
+        assertEquals(32767, p.getInteger());
         p.field("i4");
-        assertEquals(-32768, p.integerValue);
+        assertEquals(-32768, p.getInteger());
     }
     
     @Test
@@ -108,13 +108,13 @@ public class IntegerTest {
         BinsonLight.Parser p = new BinsonLight.Parser(out.toByteArray());
         
         p.field("i1");
-        assertEquals(123456, p.integerValue);
+        assertEquals(123456, p.getInteger());
         p.field("i2");
-        assertEquals(-2000000, p.integerValue);
+        assertEquals(-2000000, p.getInteger());
         p.field("i3");
-        assertEquals(2147483647, p.integerValue);
+        assertEquals(2147483647, p.getInteger());
         p.field("i4");
-        assertEquals(-2147483648, p.integerValue);
+        assertEquals(-2147483648, p.getInteger());
     }
     
 
@@ -133,12 +133,12 @@ public class IntegerTest {
         BinsonLight.Parser p = new BinsonLight.Parser(out.toByteArray());
         
         p.field("i1");
-        assertEquals(123456789012L, p.integerValue);
+        assertEquals(123456789012L, p.getInteger());
         p.field("i2");
-        assertEquals(-20000000000L, p.integerValue);
+        assertEquals(-20000000000L, p.getInteger());
         p.field("i3");
-        assertEquals(Long.MAX_VALUE, p.integerValue);
+        assertEquals(Long.MAX_VALUE, p.getInteger());
         p.field("i4");
-        assertEquals(Long.MIN_VALUE, p.integerValue);
+        assertEquals(Long.MIN_VALUE, p.getInteger());
     }
 }

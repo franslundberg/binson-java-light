@@ -14,6 +14,9 @@ Copy `src/org/binson/light/Binson.java` to your Java project.
 Code examples
 =============
 
+Useful code examples. The source code is also available from 
+`src-test/binson/ReadmeExamples.java`.
+
 **Example 1**. The code below first creates Binson bytes with two fields: 
 one integer named 'a' and one string named 's'. Then the bytes are parsed to 
 retrieve the original values.
@@ -36,9 +39,9 @@ retrieve the original values.
     BinsonLight.Parser p = new BinsonLight.Parser(bytes);
     
     p.field("a");
-    System.out.println(p.integerValue);    // -> 123
+    System.out.println(p.getInteger());    // -> 123
     p.field("s");
-    System.out.println(p.stringValue);     // -> Hello world!
+    System.out.println(p.getString());     // -> Hello world!
         
 **Example 2**. This example demonstrates how a nested Binson object 
 can be handled.
@@ -49,7 +52,6 @@ can be handled.
     //   c = 3;
     // }
     //
-    
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     BinsonLight.Writer w = new BinsonLight.Writer(out);
     
@@ -66,10 +68,10 @@ can be handled.
     p.field("a");
     p.goIntoObject();
     p.field("b");
-    System.out.println(p.integerValue);    // -> 2
+    System.out.println(p.getInteger());    // -> 2
     p.goUpToObject();
     p.field("c");
-    System.out.println(p.integerValue);    // -> 3
+    System.out.println(p.getInteger());    // -> 3
  
 **Example 3**. This example shows how arrays are generated and parsed.
  
@@ -93,12 +95,12 @@ can be handled.
     
     boolean gotValue = p.nextArrayValue();
     System.out.println(gotValue);        // -> true
-    System.out.println(p.type == BinsonLight.TYPE_INTEGER);   // -> true
-    System.out.print(p.integerValue);    // -> 123
+    System.out.println(p.getType() == BinsonLight.ValueType.INTEGER);   // -> true
+    System.out.println(p.getInteger());    // -> 123
     
     gotValue = p.nextArrayValue();
     System.out.println(gotValue);        // -> true
-    System.out.println(p.type == BinsonLight.TYPE_STRING);   // -> true
-    System.out.print(p.stringValue);     // -> Hello world!
-        
+    System.out.println(p.getType() == BinsonLight.ValueType.STRING);   // -> true
+    System.out.println(p.getString());     // -> Hello world!
+
  

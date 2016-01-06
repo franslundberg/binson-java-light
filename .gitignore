@@ -12,3 +12,4 @@ out/*
 # jvm
 hs_err_pid*
 
+/out/

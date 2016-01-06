@@ -21,17 +21,21 @@ import java.io.UnsupportedEncodingException;
  * @author Frans Lundberg
  */
 public class BinsonLight {
-    public static final int TYPE_OBJECT = 100;
-    public static final int TYPE_ARRAY = 101;
-    public static final int TYPE_BOOLEAN = 0x44;
-    public static final int TYPE_INTEGER = 0x10;
-    public static final int TYPE_STRING = 0x14;
-    public static final int TYPE_BYTES  = 0x18;
+    public static enum ValueType {
+        BOOLEAN, INTEGER, DOUBLE, STRING, BYTES, ARRAY, OBJECT
+    }
     
-    private static final int BEGIN=0x40, END=0x41, BEGIN_ARRAY=0x42, END_ARRAY=0x43, 
-        TRUE=0x44, FALSE=0x45, DOUBLE=0x46,
-        INTEGER1=0x10, INTEGER2=0x11, INTEGER4=0x12, INTEGER8=0x13,
-        STRING1=0x14, STRING2=0x15, STRING4=0x16, BYTES1=0x18, BYTES2=0x19, BYTES4=0x1a;
+    //public static final byte TYPE_OBJECT = 100;
+    //public static final byte TYPE_ARRAY = 101;
+    //public static final byte TYPE_BOOLEAN = 0x44;
+    //public static final byte TYPE_INTEGER = 0x10;
+    //public static final byte TYPE_STRING = 0x14;
+    //public static final byte TYPE_BYTES  = 0x18;
+    
+    private static final byte BEGIN=0x40, END=0x41, BEGIN_ARRAY=0x42, END_ARRAY=0x43, 
+        TRUE=0x44, FALSE=0x45, INTEGER1=0x10, INTEGER2=0x11, INTEGER4=0x12, INTEGER8=0x13,
+        DOUBLE=0x46, STRING1=0x14, STRING2=0x15, STRING4=0x16, 
+        BYTES1=0x18, BYTES2=0x19, BYTES4=0x1a;
     private static final int INT_LENGTH_MASK = 0x03;
     private static final int ONE_BYTE = 0x00, TWO_BYTES = 0x01, FOUR_BYTES = 0x02, EIGHT_BYTES = 0x03;
     private static final long TWO_TO_7 = 128, TWO_TO_15 = 32768, TWO_TO_31 = 2147483648L;
@@ -42,43 +46,38 @@ public class BinsonLight {
 	 * fields. A "stream parser"; no in-memory representation is built.
 	 */
 	public static class Parser {
-	    /** Name of last field parsed. */
-		public StringValue name;
-	    
-		/** Type of last value parsed. One of TYPE_BOOLEAN, TYPE_INTEGER, ... */
-		public int type;
-		
-		/** Last boolean value parsed. */
-	    public boolean booleanValue;
-	    
-	    /** Last integer value parsed. */
-	    public long integerValue;
-	    
-	    /** Last double value parsed. */
-	    public double doubleValue;
-	    
-	    /** Last string value parsed. */
-	    public StringValue stringValue;
-	    
-	    /** Last bytes value parsed. */
-	    public BytesValue bytesValue;
-	    
-	    private static final int STATE_ZERO = 200;
-	    private static final int STATE_BEFORE_FIELD = 201;
-	    private static final int STATE_BEFORE_ARRAY_VALUE = 202;
-	    private static final int STATE_BEFORE_ARRAY = 203;
-	    private static final int STATE_END_OF_ARRAY = 204;
-	    private static final int STATE_BEFORE_OBJECT = 205;
-	    private static final int STATE_END_OF_OBJECT = 206;
-	    
-	    int state = STATE_ZERO;
+        private static final int STATE_ZERO = 200;
+        private static final int STATE_BEFORE_FIELD = 201;
+        private static final int STATE_BEFORE_ARRAY_VALUE = 202;
+        private static final int STATE_BEFORE_ARRAY = 203;
+        private static final int STATE_END_OF_ARRAY = 204;
+        private static final int STATE_BEFORE_OBJECT = 205;
+        private static final int STATE_END_OF_OBJECT = 206;
+	        
+        /** Type of last value parsed. One of TYPE_BOOLEAN, TYPE_INTEGER, ... */
+        private ValueType type;
+		private StringValue name;
+	    private boolean booleanValue;
+	    private long integerValue;
+	    private double doubleValue;
+	    private StringValue stringValue;
+	    private BytesValue bytesValue;
+	    private int state = STATE_ZERO;
 	    private byte[] buffer;
-	    int offset;
+	    private int offset;
 	    
+	    /**
+         * Creates a new Parser to parse the bytes in 'buffer'
+         * starting from the first byte of the array.
+         */
 	    public Parser(byte[] buffer) {
 	        this(buffer, 0);
 	    }
 	    
+	    /**
+	     * Creates a new Parser to parse the bytes in 'buffer'
+	     * starting at the given 'offset'.
+	     */
 	    public Parser(byte[] buffer, int offset) {
 	        this.stringValue = new StringValue();
 	        this.bytesValue = new BytesValue();
@@ -132,187 +131,202 @@ public class BinsonLight {
 	            throw new IllegalStateException("not ready to read a field, state: " + state);
 	        }
 	        
-	        int typeBeforeName = readOne();
+	        byte typeBeforeName = readOne();
 	        if (typeBeforeName == END) {
 	        	state = STATE_END_OF_OBJECT;
 	        	return false;
 	        }
 	        parseFieldName(typeBeforeName);
 	        
-	        int typeBeforeValue = readOne();
+	        byte typeBeforeValue = readOne();
 	        parseValue(typeBeforeValue, STATE_BEFORE_FIELD);
 	        
 	        return true;
 	    }
 
-		private void parseValue(int typeByte, int afterValueState) {
+		public boolean nextArrayValue() {
+        	if (state == STATE_BEFORE_ARRAY) {
+        		state = STATE_BEFORE_ARRAY_VALUE;
+        		while (nextArrayValue()) {}
+        		state = STATE_BEFORE_ARRAY_VALUE;
+        	}
+        	
+        	if (state == STATE_BEFORE_OBJECT) {
+        		state = STATE_BEFORE_FIELD;
+        		while (nextField()) {}
+        		state = STATE_BEFORE_ARRAY_VALUE;
+        	}
+        	
+        	if (state != STATE_BEFORE_ARRAY_VALUE) {
+        		throw new IllegalStateException("not before array value, " + state);
+        	}
+        	
+        	byte typeByte = readOne();
+        	if (typeByte == END_ARRAY) {
+        		state = STATE_END_OF_ARRAY;
+        		return false;
+        	}
+        	
+        	parseValue(typeByte, STATE_BEFORE_ARRAY_VALUE);
+        	return true;
+        }
+
+        /**
+         * Checks whether current field name equals a provided one.
+         */
+        public boolean nameEquals(StringValue name) {
+            return this.getName() == null ? false : this.getName().equals(name);
+        }
+
+        /**
+         * Checks whether current field name equals the provided name.
+         * Note, this method does allocate memory. Use nameEquals(StringValue)
+         * or nameEquals(byte[]) for highest performance.
+         */
+        public boolean nameEquals(String name) {
+        	return this.name.toString().equals(name);
+        }
+
+        public void goIntoObject() {
+        	if (state != STATE_BEFORE_OBJECT) {
+        		throw new IllegalStateException("unexpected parser state, not an object field");
+        	}
+        	state = STATE_BEFORE_FIELD;
+        }
+
+        public void goIntoArray() {
+        	if (state != STATE_BEFORE_ARRAY) {
+        		throw new IllegalStateException("unexpected parser state, not an array field");
+        	}
+        	state = STATE_BEFORE_ARRAY_VALUE;
+        }
+
+        public void goUpToObject() {
+        	if (state == STATE_BEFORE_ARRAY_VALUE) {
+        		while (nextArrayValue()) {}
+        	}
+        	
+        	if (state == STATE_BEFORE_FIELD) {
+        		while (nextField()) {}
+        	}
+        	
+        	if (state != STATE_END_OF_OBJECT && state != STATE_END_OF_ARRAY) {
+        		throw new IllegalStateException("unexpected parser state, " + state);
+        	}
+        	
+        	state = STATE_BEFORE_FIELD;
+        }
+
+        public void goUpToArray() {
+        	if (state == STATE_BEFORE_ARRAY_VALUE) {
+        		while (nextArrayValue()) {}
+        	}
+        	
+        	if (state == STATE_BEFORE_FIELD) {
+        		while (nextField()) {}
+        	}
+        	
+        	if (state != STATE_END_OF_OBJECT && state != STATE_END_OF_ARRAY) {
+        		throw new IllegalStateException("unexpected parser state, " + state);
+        	}
+        	
+        	state = STATE_BEFORE_ARRAY_VALUE;
+        }
+
+        /** Returns the type of the last value parsed. */
+        public final ValueType getType() {
+            return type;
+        }
+
+        /** Returns the name of the last field parsed. */
+        public final StringValue getName() {
+            return name;
+        }
+
+        /** Returns the last boolean value parsed. */
+        public final boolean getBoolean() {
+            return booleanValue;
+        }
+
+        /** Returns the last integer value parsed. */
+        public final long getInteger() {
+            return integerValue;
+        }
+
+        /** Returns the last double value parsed. */
+        public final double getDouble() {
+            return doubleValue;
+        }
+
+        /** Returns the last string value parsed. */
+        public final StringValue getString() {
+            return stringValue;
+        }
+
+        /** Returns the last bytes value parsed. */
+        public final BytesValue getBytes() {
+            return bytesValue;
+        }
+
+        private void parseValue(byte typeByte, int afterValueState) {
 			switch (typeByte) {
 	        case BEGIN:
-	            type = TYPE_OBJECT;
+	            type = ValueType.OBJECT;
 	            state = STATE_BEFORE_OBJECT;
 	            break;
 	        case BEGIN_ARRAY:
-	            type = TYPE_ARRAY;
+	            type = ValueType.ARRAY;
 	            state = STATE_BEFORE_ARRAY;
 	            break;
-	            
 	        case FALSE:
-	            type = TYPE_BOOLEAN;
-	            booleanValue = false;
-	            state = afterValueState;
-	            break;
-	            
 	        case TRUE:
-	            type = TYPE_BOOLEAN;
-	            booleanValue = true;
+	            type = ValueType.BOOLEAN;
+	            booleanValue = typeByte == TRUE;
 	            state = afterValueState;
 	            break;
-	            
 	        case DOUBLE:
-	            type = DOUBLE;
+	            type = ValueType.DOUBLE;
 	            parseDouble();
 	            state = afterValueState;
 	            break;
-	            
 	        case INTEGER1:
 	        case INTEGER2:
 	        case INTEGER4:
 	        case INTEGER8:
-	            type = TYPE_INTEGER;
+	            type = ValueType.INTEGER;
 	            integerValue = parseInteger(typeByte);            
 	            state = afterValueState;
 	            break;
-	            
 	        case STRING1:
 	        case STRING2:
 	        case STRING4:
-	            type = TYPE_STRING;
-	            parseString(typeByte, stringValue);
+	            type = ValueType.STRING;
+	            parseString(typeByte, getString());
 	            state = afterValueState;
 	            break;
-	            
 	        case BYTES1:
 	        case BYTES2:
 	        case BYTES4:
-	            type = TYPE_BYTES;
-	            parseBytes(type);
+	            type = ValueType.BYTES;
+	            parseBytes(typeByte);
 	            state = afterValueState;
 	            break;
-	            
 	        default:
 	            throw new FormatException("Unexpected type byte: " + typeByte + ".");
 	        }
 		}
 
-		private void parseFieldName(int typeBeforeName) {
+		private void parseFieldName(byte typeBeforeName) {
 			switch (typeBeforeName) {
 	        case STRING1:
 	        case STRING2:
 	        case STRING4:
-	            parseString(typeBeforeName, name);
+	            parseString(typeBeforeName, getName());
 	            break;
 	        default:
 	            throw new FormatException("unexpected type: " + typeBeforeName);
 	        }
 		}
-	    
-	    public boolean nextArrayValue() {
-	    	if (state == STATE_BEFORE_ARRAY) {
-	    		state = STATE_BEFORE_ARRAY_VALUE;
-	    		while (nextArrayValue()) {}
-	    		state = STATE_BEFORE_ARRAY_VALUE;
-	    	}
-	    	
-	    	if (state == STATE_BEFORE_OBJECT) {
-	    		state = STATE_BEFORE_FIELD;
-	    		while (nextField()) {}
-	    		state = STATE_BEFORE_ARRAY_VALUE;
-	    	}
-	    	
-	    	if (state != STATE_BEFORE_ARRAY_VALUE) {
-	    		throw new IllegalStateException("not before array value, " + state);
-	    	}
-	    	
-	    	int typeByte = readOne();
-	    	if (typeByte == END_ARRAY) {
-	    		state = STATE_END_OF_ARRAY;
-	    		return false;
-	    	}
-	    	
-	    	parseValue(typeByte, STATE_BEFORE_ARRAY_VALUE);
-	    	return true;
-	    }
-
-	    public void goIntoObject() {
-	    	if (state != STATE_BEFORE_OBJECT) {
-	    		throw new IllegalStateException("unexpected parser state, not an object field");
-	    	}
-	    	state = STATE_BEFORE_FIELD;
-	    }
-	    
-	    public void goIntoArray() {
-	    	if (state != STATE_BEFORE_ARRAY) {
-	    		throw new IllegalStateException("unexpected parser state, not an array field");
-	    	}
-	    	state = STATE_BEFORE_ARRAY_VALUE;
-	    }
-	    
-	    public void goUpToObject() {
-	    	if (state == STATE_BEFORE_ARRAY_VALUE) {
-	    		while (nextArrayValue()) {}
-	    	}
-	    	
-	    	if (state == STATE_BEFORE_FIELD) {
-	    		while (nextField()) {}
-	    	}
-	    	
-	    	if (state != STATE_END_OF_OBJECT && state != STATE_END_OF_ARRAY) {
-	    		throw new IllegalStateException("unexpected parser state, " + state);
-	    	}
-	    	
-	    	state = STATE_BEFORE_FIELD;
-	    }
-	    
-	    public void goUpToArray() {
-	    	if (state == STATE_BEFORE_ARRAY_VALUE) {
-	    		while (nextArrayValue()) {}
-	    	}
-	    	
-	    	if (state == STATE_BEFORE_FIELD) {
-	    		while (nextField()) {}
-	    	}
-	    	
-	    	if (state != STATE_END_OF_OBJECT && state != STATE_END_OF_ARRAY) {
-	    		throw new IllegalStateException("unexpected parser state, " + state);
-	    	}
-	    	
-	    	state = STATE_BEFORE_ARRAY_VALUE;
-	    }
-	    
-	    /**
-	     * Checks whether current field name equals a provided one.
-	     */
-	    public boolean nameEquals(StringValue name) {
-	        return this.name == null ? false : this.name.equals(name);
-	    }
-	    
-	    public boolean nameEquals(String name) {
-	    	return this.name == null ? false : this.name.toString().equals(name);
-	    }
-	    
-	    /**
-	     * Creates a parser to parse current field value.
-	     * Last read field must be of type TYPE_OBJECT.
-	     * 
-	     * @throws IllegalStateException if the parser is not about to parse an object value.
-	     */
-	    public Parser parser() {
-	    	if (state != STATE_BEFORE_OBJECT) {
-	    		throw new IllegalStateException("not before object value");
-	    	}
-	    	
-	    	return new Parser(buffer, offset - 1);
-	    }
 	    
 	    private void parseDouble() {
 	        doubleValue = Util.bytesToDoubleLE(buffer, offset);
@@ -327,22 +341,22 @@ public class BinsonLight {
 	        state = STATE_BEFORE_FIELD;
 	    }
 	    
-	    private void parseString(int type, StringValue s) {
-	        int len = (int) parseInteger(type);
+	    private void parseString(byte typeByte, StringValue s) {
+	        int len = (int) parseInteger(typeByte);  // XXX cast
 	        if (len < 0) throw new FormatException("Bad len, " + len + ".");
 	        s.set(buffer, offset, len);
 	        this.offset += len;
 	    }
 	    
-	    private void parseBytes(int type) {
-	        int len = (int) parseInteger(type);
+	    private void parseBytes(byte typeByte) {
+	        int len = (int) parseInteger(typeByte); // XXX cast
 	        if (len < 0) throw new FormatException("Bad len, " + len + ".");
 	        bytesValue.set(buffer, offset, len);
 	        this.offset += len;
 	    }
 	    
-	    private long parseInteger(int type) {
-	        int intType = type & INT_LENGTH_MASK;
+	    private long parseInteger(byte typeByte) {
+	        int intType = typeByte & INT_LENGTH_MASK;
 	        long integer;
 	        
 	        switch (intType) {
@@ -373,20 +387,8 @@ public class BinsonLight {
 	        return integer;
 	    }
 	    
-	    private int readOne() {
-	        int result = unsigned(buffer[offset]);
-	        offset++;
-	        return result;
-	    }
-	    
-	
-	    /**
-	     * Returns an int in range [0, 255] given a byte.
-	     * The byte is considered unsigned instead of the ordinary signed 
-	     * interpretation in Java.
-	     */
-	    private static int unsigned(byte b) {
-	        return b & 0x000000ff;
+	    private final byte readOne() {
+	        return buffer[offset++];
 	    }
 	}
 
@@ -437,7 +439,7 @@ public class BinsonLight {
 	    }
 	    
 	    public Writer integer(long value) throws IOException {
-	        writeIntegerOrLength(TYPE_INTEGER, value);
+	        writeIntegerOrLength(INTEGER1, value);
 	        return this;
 	    }
 	    
@@ -454,13 +456,13 @@ public class BinsonLight {
 	    }
 	    
 	    public Writer string(byte[] utf8Bytes) throws IOException {
-	        writeIntegerOrLength(TYPE_STRING, utf8Bytes.length);
+	        writeIntegerOrLength(STRING1, utf8Bytes.length);
             out.write(utf8Bytes);
             return this;
 	    }
 	    
 	    public Writer bytes(byte[] value) throws IOException {
-	        writeIntegerOrLength(TYPE_BYTES, value.length);
+	        writeIntegerOrLength(BYTES1, value.length);
 	        out.write(value);
 	        return this;
 	    }
@@ -578,14 +580,14 @@ public class BinsonLight {
 	    }
 	}
 	
-	public static class Util {
-	    public static final short bytesToShortLE(byte[] arr, int offset) {
+	private static final class Util {
+	    private static short bytesToShortLE(byte[] arr, int offset) {
 	        int result = (arr[offset++] & 0x00ff);
 	        result |= (arr[offset++] & 0x00ff) << 8;
 	        return (short) result;
 	    }
 	    
-	    public static final int bytesToIntLE(byte[] arr, int offset) {
+	    private static int bytesToIntLE(byte[] arr, int offset) {
 	        int i = offset;
 	        int result = (arr[i++] & 0x00ff);
 	        result |= (arr[i++] & 0x00ff) << 8;
@@ -594,7 +596,7 @@ public class BinsonLight {
 	        return result;
 	    }
 	    
-	    public static final long bytesToLongLE(byte[] arr, int offset) {
+	    private static long bytesToLongLE(byte[] arr, int offset) {
 	        int i = offset;
 	        long result = (arr[i++] & 0x000000ffL);
 	        result |= (arr[i++] & 0x000000ffL) << 8;
@@ -607,25 +609,25 @@ public class BinsonLight {
 	        return result;
 	    }
 	    
-	    public static double bytesToDoubleLE(byte[] arr, int offset) {
+	    private static double bytesToDoubleLE(byte[] arr, int offset) {
 	        long myLong = bytesToLongLE(arr, offset);
 	        return Double.longBitsToDouble(myLong);
 	    }
 
-	    public static final void shortToBytesLE(int value, byte[] arr, int offset) {
+	    private static void shortToBytesLE(int value, byte[] arr, int offset) {
 	        int i = offset;
 	        arr[i++] = (byte) value;
 	        arr[i++] = (byte) (value >>> 8);
 	    }
 
-	    public static final void intToBytesLE(int value, byte[] arr, int offset) {
+	    private static final void intToBytesLE(int value, byte[] arr, int offset) {
 	        arr[offset++] = (byte) value;
 	        arr[offset++] = (byte) (value >>> 8);
 	        arr[offset++] = (byte) (value >>> 16);
 	        arr[offset] = (byte) (value >>> 24);
 	    }
 
-	    public static final void longToBytesLE(final long value, final byte[] arr, int offset) {
+	    private static final void longToBytesLE(final long value, final byte[] arr, int offset) {
 	        int i = offset;
 	        arr[i++] = (byte) value;
 	        arr[i++] = (byte) (value >>> 8);
@@ -637,7 +639,7 @@ public class BinsonLight {
 	        arr[i]   = (byte) (value >>> 56);
 	    }
 	    
-	    public static final void doubleToBytesLE(double value, byte[] arr, int offset) {
+	    private static final void doubleToBytesLE(double value, byte[] arr, int offset) {
 	        long bits = Double.doubleToRawLongBits(value);
 	        longToBytesLE(bits, arr, 1);
 	    }
