@@ -19,7 +19,9 @@ Code examples
 =============
 
 Useful code examples. The source code is also available from 
-`src-test/binson/ReadmeExamples.java`.
+`src-test/binson/ReadmeExamples.java`. NOTE: fields must be sorted on alphabetical order
+(see binson.org for the sort order definition) to be real binson objects. This light-weight implementation 
+of Binson does not check this. Invalid binson bytes can be produced with the code.
 
 **Example 1**. The code below first creates Binson bytes with two fields: 
 one integer named 'a' and one string named 's'. Then the bytes are parsed to 
