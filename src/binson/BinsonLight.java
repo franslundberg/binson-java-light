@@ -25,13 +25,6 @@ public class BinsonLight {
         BOOLEAN, INTEGER, DOUBLE, STRING, BYTES, ARRAY, OBJECT
     }
     
-    //public static final byte TYPE_OBJECT = 100;
-    //public static final byte TYPE_ARRAY = 101;
-    //public static final byte TYPE_BOOLEAN = 0x44;
-    //public static final byte TYPE_INTEGER = 0x10;
-    //public static final byte TYPE_STRING = 0x14;
-    //public static final byte TYPE_BYTES  = 0x18;
-    
     private static final byte BEGIN=0x40, END=0x41, BEGIN_ARRAY=0x42, END_ARRAY=0x43, 
         TRUE=0x44, FALSE=0x45, INTEGER1=0x10, INTEGER2=0x11, INTEGER4=0x12, INTEGER8=0x13,
         DOUBLE=0x46, STRING1=0x14, STRING2=0x15, STRING4=0x16, 
