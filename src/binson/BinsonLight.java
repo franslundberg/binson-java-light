@@ -1,3 +1,6 @@
+// Copyright Frans Lundberg, Stockholm, 2016.
+// This code is public domain. Use it as you please.
+
 package binson;
 
 import java.io.IOException;
@@ -336,14 +339,37 @@ public class BinsonLight {
         }
         
         private void parseString(byte typeByte, StringValue s) {
-            int len = (int) parseInteger(typeByte);  // XXX cast
+            // TODO Consider setting for max length of strings and bytes.
+            // To avoid OutOfMemoryError if attacher specifies a huge length.
+            
+            long longLen = parseInteger(typeByte);
+            if (longLen < 0) {
+                throw new FormatException("Bad string length, " + longLen + ".");
+            }
+            if (longLen > 10*1000000L) {
+                throw new FormatException("String length too big, " + longLen + ".");
+            }
+            
+            int len = (int) longLen;
             if (len < 0) throw new FormatException("Bad len, " + len + ".");
             s.set(buffer, offset, len);
             this.offset += len;
         }
         
         private void parseBytes(byte typeByte) {
-            int len = (int) parseInteger(typeByte); // XXX cast
+            // TODO Consider setting for max length of strings and bytes.
+            // To avoid OutOfMemoryError if attacher specifies a huge length.
+            
+            long longLen = parseInteger(typeByte);
+            if (longLen < 0) {
+                throw new FormatException("Bad length of bytes, " + longLen + ".");
+            }
+            if (longLen > 50*1000000L) {
+                throw new FormatException("Bad length of bytes, " + longLen + ".");
+            }
+            
+            int len = (int) longLen;
+            
             if (len < 0) throw new FormatException("Bad len, " + len + ".");
             bytesValue.set(buffer, offset, len);
             this.offset += len;
