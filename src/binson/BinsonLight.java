@@ -598,6 +598,15 @@ public class BinsonLight {
             this.offset = offset;
             this.size = size;
         }
+        
+        /**
+         * Returns a byte array copy of the value.
+         */
+        public byte[] toByteArray() {
+            byte[] result = new byte[size];
+            System.arraycopy(buffer, offset, result, 0, size);
+            return result;
+        }
     }
     
     private static final class Util {
