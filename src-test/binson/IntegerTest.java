@@ -1,12 +1,11 @@
 package binson;
 
 import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.junit.Assert;
 import org.junit.Test;
-
 import binson.BinsonLight;
 
 public class IntegerTest {
@@ -34,6 +33,82 @@ public class IntegerTest {
 		assertEquals(Long.MAX_VALUE, p.getInteger());
 	}
 	
+	@Test
+	public void testIntLimit1() throws IOException {	    
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+            BinsonLight.Writer w = new BinsonLight.Writer(out);
+            
+            w.begin()
+                .name("i1").integer(127)
+                .name("i2").integer(128)
+                .name("i3").integer(-128)
+                .name("i4").integer(-129)
+            .end().flush();
+            
+            byte[] bytes = out.toByteArray();
+            //System.out.println(Hex.create(bytes));
+            // 4014026931107f1402693211800014026933108014026934117fff41
+            
+            BinsonLight.Parser p = new BinsonLight.Parser(bytes);
+            p.field("i1");
+            Assert.assertEquals(127, p.getInteger());
+            p.field("i2");
+            Assert.assertEquals(128, p.getInteger());
+            p.field("i4");
+            Assert.assertEquals(-129, p.getInteger());
+	}
+	
+	       
+        @Test
+        public void testIntLimit2() throws IOException {       
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            BinsonLight.Writer w = new BinsonLight.Writer(out);
+            
+            w.begin()
+                .name("i1").integer(32767)    // 2^15-1
+                .name("i2").integer(32768)
+                .name("i3").integer(-32768)   // -2^15
+                .name("i4").integer(-32769)
+            .end().flush();
+            
+            byte[] bytes = out.toByteArray();
+            
+            //System.out.println(Hex.create(bytes));
+            // 401402693111ff7f140269321200800000140269331100801402693412ff7fffff41
+            
+            BinsonLight.Parser p = new BinsonLight.Parser(bytes);
+            p.field("i1");
+            Assert.assertEquals(32767, p.getInteger());
+            p.field("i2");
+            Assert.assertEquals(32768, p.getInteger());
+            p.field("i3");
+            Assert.assertEquals(-32768, p.getInteger());
+            p.field("i4");
+            Assert.assertEquals(-32769, p.getInteger());
+        }
+        
+        @Test
+        public void testIntLimit3() throws IOException {       
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            BinsonLight.Writer w = new BinsonLight.Writer(out);
+            
+            w.begin()
+                .name("i1").integer(2147483647L)    // 2^31-1
+                .name("i2").integer(2147483648L)    
+            .end().flush();
+            
+            byte[] bytes = out.toByteArray();
+            
+            //System.out.println(Hex.create(bytes));
+            // 401402693112ffffff7f1402693213000000800000000041
+            
+            BinsonLight.Parser p = new BinsonLight.Parser(bytes);
+            p.field("i1");
+            Assert.assertEquals(2147483647L, p.getInteger());
+            p.field("i2");
+            Assert.assertEquals(2147483648L, p.getInteger());
+        }
+        
 	@Test
 	public void testInt250() {
 		// ex9, int value = 250
