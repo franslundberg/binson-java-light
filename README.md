@@ -12,7 +12,8 @@ is needed, consider using
 Install
 =======
 
-Copy `src/org/binson/light/Binson.java` to your Java project.
+Copy `src/org/binson/light/Binson.java` to your Java project. That's all! The code is in the public domain, so no need
+to follow a specific license requirements.
 
 
 Code examples
