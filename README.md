@@ -3,6 +3,7 @@ binson-java-light
 
 A light-weight one-file Java implementation of a Binson parser and writer.
 Binson is like JSON, but faster, binary and even simpler. See [binson.org](http://binson.org/).
+This code is in the public domain. 
 
 This library is low-level and light-weight; if a more complete feature set
 is needed, consider using 
@@ -117,7 +118,6 @@ Build
 
 Use any tool, build from source in src. No dependencies expect the standard JVM.
 To run the tests, use JUnit 5 and the source files in src-test.
-
 
 
 Versions and history
