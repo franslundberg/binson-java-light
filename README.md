@@ -13,7 +13,7 @@ Install
 =======
 
 Copy `src/org/binson/light/Binson.java` to your Java project. That's all! The code is in the public domain, so no need
-to follow a specific license requirements.
+to follow specific license requirements.
 
 
 Code examples
@@ -110,4 +110,24 @@ can be handled.
     System.out.println(p.getType() == BinsonLight.ValueType.STRING);   // -> true
     System.out.println(p.getString());     // -> Hello world!
 
- 
+
+
+Build
+=====
+
+Use any tool, build from source in src. No dependencies expect the standard JVM.
+To run the tests, use JUnit 5 and the source files in src-test.
+
+
+
+Versions and history
+====================
+
+* 2021 January 4. Improved error handling and documentation. Release v1.1.0.
+
+* 2016 January 29. First complete version.
+
+* 2016 January 4. First commit.
+
+* 2014 May. The Binson specification (BINSON-SPEC-1) was written by Frans Lundberg. 
+  See binson.org. This code follows the specification.

@@ -1,5 +1,5 @@
-// Copyright Frans Lundberg, Stockholm, 2016.
-// This code is public domain. Use it as you please.
+// Copyright Frans Lundberg, Saltsjöbaden, 2020.
+// This code is PUBLIC DOMAIN. Use it as you please.
 
 package binson;
 
@@ -16,10 +16,9 @@ import java.io.UnsupportedEncodingException;
  * 
  * Binson.Writer is used to write a Binson object to an OutputStream.
  * 
- * In general, this implementation is indented to be small and high performance.
- * It is suitable for applications on small devices, for high-performance implementations, 
- * and for cases when a single public domain java source file is all that is needed instead
- * of a library dependency.
+ * In general, this implementation is intended to be small and high performance.
+ * It is suitable for applications on small devices, for high-performance implementations,
+ * and as a base for a higher-level API.
  * 
  * @author Frans Lundberg
  */
@@ -339,38 +338,36 @@ public class BinsonLight {
         }
         
         private void parseString(byte typeByte, StringValue s) {
-            // TODO Consider setting for max length of strings and bytes.
-            // To avoid OutOfMemoryError if attacher specifies a huge length.
-            
             long longLen = parseInteger(typeByte);
             if (longLen < 0) {
                 throw new FormatException("Bad string length, " + longLen + ".");
             }
-            if (longLen > 10*1000000L) {
-                throw new FormatException("String length too big, " + longLen + ".");
-            }
             
             int len = (int) longLen;
-            if (len < 0) throw new FormatException("Bad len, " + len + ".");
+            if (len < 0) throw new FormatException("Bad string length, " + len + ".");
+            
+            if (offset + len >= buffer.length) {
+            	throw new FormatException("Bad byte length of string (" + len + "), extends beyond the input buffer.");
+            }
+            
             s.set(buffer, offset, len);
             this.offset += len;
         }
         
         private void parseBytes(byte typeByte) {
-            // TODO Consider setting for max length of strings and bytes.
-            // To avoid OutOfMemoryError if attacher specifies a huge length.
-            
             long longLen = parseInteger(typeByte);
             if (longLen < 0) {
-                throw new FormatException("Bad length of bytes, " + longLen + ".");
-            }
-            if (longLen > 50*1000000L) {
                 throw new FormatException("Bad length of bytes, " + longLen + ".");
             }
             
             int len = (int) longLen;
             
             if (len < 0) throw new FormatException("Bad len, " + len + ".");
+            
+            if (offset + len >= buffer.length) {
+            	throw new FormatException("Bad length of bytes (" + len + "), extends beyond the input buffer.");
+            }
+            
             bytesValue.set(buffer, offset, len);
             this.offset += len;
         }
@@ -601,6 +598,7 @@ public class BinsonLight {
         
         /**
          * Returns a byte array copy of the value.
+         * This method allocates this.size bytes.
          */
         public byte[] toByteArray() {
             byte[] result = new byte[size];

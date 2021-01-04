@@ -1,6 +1,8 @@
 package binson;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 import binson.BinsonLight;
 import binson.BinsonLight.ValueType;
@@ -179,5 +181,58 @@ public class ParserTest {
 	    }
 	    
 	    assertEquals(true, ex != null);
+    }
+    
+    @Test
+    public void testStringBeyondInputBuffer() {
+    	// String length is too large. Extends beyond the input buffer.
+    	// Hand-hacked incorrect "Binson".
+    	//
+    	// 40                begin
+    	//   14 01 61        name "a" (size 1)
+    	//   14 64 62 62     string "bb" with an INCORRECT length of 100 (0x64).
+    	// 41                end
+    	//
+    	// Together: 401401611464626241
+    	//
+    	
+    	Exception ex = null;
+	    BinsonLight.Parser p = new BinsonLight.Parser(Hex.toBytes("401401611464626241"));
+	    try {
+	    	p.field("a");
+	    } catch (BinsonLight.FormatException e) {
+	    	ex = e;
+	    }
+	    
+	    assertEquals(true, ex != null);
+	    assertTrue(ex.getMessage().contains("extends beyond"));
+	    assertTrue(ex.getMessage().contains("100"));
+    }
+    
+    @Test
+    public void testBytesBeyondInputBuffer() {
+    	// Bytes length is too large. Extends beyond the input buffer.
+    	// Hand-hacked incorrect "Binson".
+    	//
+    	// 40                begin
+    	//   14 01 61        name "a" (size 1)
+    	//   18 64 07 07     bytes string 0x0707 with an INCORRECT length of 100 (0x64).
+    	// 41                end
+    	//
+    	// Together: 401401611864070741
+    	//
+    	
+    	Exception ex = null;
+	    BinsonLight.Parser p = new BinsonLight.Parser(Hex.toBytes("401401611864070741"));
+	    try {
+	    	p.field("a");
+	    } catch (BinsonLight.FormatException e) {
+	    	ex = e;
+	    }
+	    
+	    assertEquals(true, ex != null);
+	    assertTrue(ex.getMessage().contains("length of bytes"));
+	    assertTrue(ex.getMessage().contains("extends beyond"));
+	    assertTrue("contains100", ex.getMessage().contains("100"));
     }
 }
