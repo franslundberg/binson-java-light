@@ -422,6 +422,7 @@ public class BinsonLight {
      * Writes Binson tokens to an OutputStream. The writer is low-level and very simple.
      * There is no validation, an instance of this class can generate invalid Binson bytes.
      * Make sure fields are written in alphabetical order. This is required to produce valid Binson.
+     * A NaN double is always written as 0x7ff8000000000000.
      */
     public static class Writer {
         private OutputStream out;
@@ -666,9 +667,13 @@ public class BinsonLight {
             arr[i]   = (byte) (value >>> 56);
         }
         
+        /**
+         * Any NaN is stored as 0x7ff8000000000000, as recommended by BINSON-SPEC-1.1.
+         * Double.doubleToLongBits() collapses all NaN values to that bit pattern.
+         */
         private static final void doubleToBytesLE(double value, byte[] arr, int offset) {
-            long bits = Double.doubleToRawLongBits(value);
-            longToBytesLE(bits, arr, 1);
+            long bits = Double.doubleToLongBits(value);
+            longToBytesLE(bits, arr, offset);
         }
     }
 }
